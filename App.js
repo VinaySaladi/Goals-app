@@ -1,11 +1,26 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {Button, FlatList, StatusBar, StyleSheet, View} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import GoalItem from './components/GoalItem';
 import GoalInput from './components/GoalInput';
 
 const App = () => {
   const [courseGoals, setCourseGoals] = useState([]);
   const [modelIsVisible, setModelIsVisible] = useState(false);
+
+  useEffect(() => {
+    const retrieveData = async () => {
+      try {
+        const storedGoals = await AsyncStorage.getItem('courseGoals');
+        if (storedGoals !== null) {
+          setCourseGoals(JSON.parse(storedGoals));
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    retrieveData();
+  }, []);
 
   const startAddGoalHandler = () => {
     setModelIsVisible(true);
@@ -21,11 +36,20 @@ const App = () => {
       {text: enteredGoalText, id: Math.random().toString()},
     ]);
     endAddGoalHandler();
+    AsyncStorage.setItem(
+      'courseGoals',
+      JSON.stringify([
+        ...courseGoals,
+        {text: enteredGoalText, id: Math.random().toString()},
+      ]),
+    );
   };
 
   const deleteGoalHandler = id => {
     setCourseGoals(currentCourseGoals => {
-      return currentCourseGoals.filter(goal => goal.id !== id);
+      const updatedGoals = currentCourseGoals.filter(goal => goal.id !== id);
+      AsyncStorage.setItem('courseGoals', JSON.stringify(updatedGoals));
+      return updatedGoals;
     });
   };
 
